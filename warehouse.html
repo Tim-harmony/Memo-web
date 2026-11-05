@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>备忘录仓库</title>
+    <style>
+        body {
+            background-image: url("冰公主3.jpg");
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-position: center;
+            margin: 0;
+            min-height: 100vh;
+            padding:40px 20px;
+            box-sizing: border-box;
+        }
+        .wrap{
+            width: 70%;
+            margin: 0 auto;
+        }
+        h2{
+            color: transparent;
+            background: linear-gradient(45deg, #ffb6c1, #87cefa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            text-align:center;
+            font-size:32px;
+        }
+        .back-btn{
+            display:block;
+            margin:0 auto 30px;
+            padding:12px 24px;
+            border:none;
+            border-radius:10px;
+            background: linear-gradient(45deg, #9999aa, #7788aa);
+            color:white;
+            font-size:16px;
+            cursor:pointer;
+            transition:0.2s;
+        }
+        .back-btn:hover{
+            transform:scale(1.05);
+        }
+        .note-item{
+            background:rgba(255,255,255,0.22);
+            backdrop-filter: blur(8px);
+            border-radius:14px;
+            padding:20px;
+            margin-bottom:18px;
+        }
+        /*==== 新增标题样式，可点击 ====*/
+        .note-title{
+            color:#fff;
+            font-size:20px;
+            cursor:pointer;
+            margin-bottom:8px;
+        }
+        .note-title:hover{
+            text-decoration: underline;
+        }
+        .note-time{
+            color:#fff;
+            font-size:14px;
+            opacity:0.85;
+        }
+        /*==== 删掉原来note-preview正文预览，不再展示正文 ====*/
+        .btn-group-row{
+            display:flex;
+            gap:12px;
+        }
+        .download-btn{
+            padding:8px 18px;
+            border:none;
+            border-radius:8px;
+            background:#4488dd;
+            color:white;
+            cursor:pointer;
+            transition:0.2s;
+        }
+        .download-btn:hover{
+            transform:scale(1.05);
+            background:#2266bb;
+        }
+        .del-btn{
+            padding:8px 18px;
+            border:none;
+            border-radius:8px;
+            background:#dd4444;
+            color:white;
+            cursor:pointer;
+            transition:0.2s;
+        }
+        .del-btn:hover{
+            transform:scale(1.05);
+            background:#bb2222;
+        }
+        .empty-tip{
+            text-align:center;
+            color:#fff;
+            font-size:22px;
+            margin-top:80px;
+        }
+
+        /*==== 新增弹窗遮罩与弹窗盒子CSS ====*/
+        .mask{
+            position:fixed;
+            inset:0;
+            background:rgba(0,0,0,0.55);
+            display:none;
+            align-items:center;
+            justify-content:center;
+            z-index:999;
+        }
+        .modal-box{
+            width:55%;
+            background:#fff;
+            border-radius:16px;
+            padding:24px;
+            max-height:75vh;
+            overflow-y:auto;
+        }
+        .modal-title{
+            font-size:24px;
+            margin-bottom:10px;
+        }
+        .modal-time{
+            color:#777;
+            margin-bottom:16px;
+        }
+        .modal-content{
+            white-space:pre-wrap;
+            line-height:1.6;
+            font-size:17px;
+        }
+        .close-modal{
+            margin-top:20px;
+            padding:10px 22px;
+            border:none;
+            border-radius:8px;
+            background:#666;
+            color:#fff;
+            cursor:pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <h2>📂 备忘录仓库</h2>
+        <button class="back-btn" onclick="location.href='index.html'">返回主页</button>
+        <div id="noteList"></div>
+    </div>
+
+    <!--==== 修改：新增弹窗DOM结构 ====-->
+    <div class="mask" id="mask">
+        <div class="modal-box">
+            <div class="modal-title" id="mTitle"></div>
+            <div class="modal-time" id="mTime"></div>
+            <div class="modal-content" id="mContent"></div>
+            <button class="close-modal" onclick="closeModal()">关闭</button>
+        </div>
+    </div>
+
+<script>
+    //==== 增加全局变量保存当前备忘录id ====
+    let currentId = null;
+
+    function renderList() {
+        let noteList = JSON.parse(localStorage.getItem("notes")) || [];
+        const box = document.getElementById("noteList");
+        box.innerHTML = "";
+        if(noteList.length === 0){
+            box.innerHTML = `<div class="empty-tip">仓库空空如也，快去新建备忘录吧</div>`;
+            return;
+        }
+        noteList.forEach(function(note){
+            /*==== 修改：列表只渲染标题+时间，去掉note-preview正文，点击标题触发弹窗openModal ====*/
+            box.innerHTML += `
+            <div class="note-item">
+                <div class="note-title" onclick="openModal(${note.id})">📌 ${note.title}</div>
+                <div class="note-time">📅 ${note.time}</div>
+                <div class="btn-group-row">
+                    <button class="download-btn" onclick="downloadTxt(${note.id})">下载 TXT</button>
+                    <button class="del-btn" onclick="deleteNote(${note.id})">删除</button>
+                </div>
+            </div>
+            `
+        })
+    }
+
+    //==== 新增打开弹窗函数，根据id读取备忘录填充弹窗内容 ====
+    function openModal(id){
+        let noteList = JSON.parse(localStorage.getItem("notes")) || [];
+        let note = noteList.find(x=>x.id === id);
+        if(!note) return;
+        currentId = id;
+        document.getElementById("mTitle").innerText = note.title;
+        document.getElementById("mTime").innerText = note.time;
+        document.getElementById("mContent").innerText = note.content;
+        document.getElementById("mask").style.display = "flex";
+    }
+    //==== 新增关闭弹窗函数 ====
+    function closeModal(){
+        document.getElementById("mask").style.display = "none";
+    }
+
+    // 下载txt
+    function downloadTxt(id){
+        let noteList = JSON.parse(localStorage.getItem("notes")) || [];
+        let targetNote = noteList.find(item=>item.id === id);
+        if(!targetNote) return;
+        /*==== 修改：下载文本带上标题，文件名使用备忘录标题 ====*/
+        const text = `标题：${targetNote.title}\n备忘录时间:${targetNote.time}\n\n${targetNote.content}`;
+        const blob = new Blob([text], {type:"text/plain"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${targetNote.title}.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    // 删除备忘录
+    function deleteNote(id) {
+        if(!confirm("确定要删除这条备忘录吗？删除后无法恢复！")){
+            return;
+        }
+        let noteList = JSON.parse(localStorage.getItem("notes")) || [];
+        noteList = noteList.filter(item => item.id !== id);
+        localStorage.setItem("notes", JSON.stringify(noteList));
+        renderList();
+    }
+
+    renderList();
+</script>
+</body>
+</html>

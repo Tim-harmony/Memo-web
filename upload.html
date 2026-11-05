@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>上传TXT文件</title>
+    <style>
+        body {
+            background-image: url("冰公主4.jpg");
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-position: center;
+            margin: 0;
+            min-height: 100vh;
+        }
+        .container {
+            width: 55%;
+            margin: 0 auto;
+            padding-top: 120px;
+            text-align: center;
+        }
+        h2 {
+            color: transparent;
+            background: linear-gradient(45deg, #ffb6c1, #87cefa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            font-size: 30px;
+        }
+        .upload-wrap{
+            background:rgba(255,255,255,0.22);
+            backdrop-filter: blur(8px);
+            border-radius:16px;
+            padding:40px 20px;
+            margin-top:30px;
+        }
+        input[type="file"]{
+            color:#ffffff;
+        }
+        .tip-text{
+            color:#fff;
+            font-size:17px;
+            margin:20px 0;
+        }
+        .btn-back{
+            margin-top:30px;
+            padding:14px 30px;
+            font-size:18px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(45deg, #9999aa, #7788aa);
+            color: white;
+            cursor: pointer;
+            transition:0.2s;
+        }
+        .btn-back:hover{
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>上传本地TXT备忘录</h2>
+        <div class="upload-wrap">
+            <div class="tip-text">仅支持上传 .txt 文本文件</div>
+            <!-- 文件选择框，只允许选择txt -->
+            <input type="file" id="fileInput" accept=".txt">
+        </div>
+        <br>
+        <button class="btn-back" onclick="location.href='index.html'">返回主页</button>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById("fileInput");
+        // 选中文件后触发
+        fileInput.onchange = function(e){
+            const file = e.target.files[0];
+            if(!file) return;
+
+            // 判断后缀，不是txt直接提示
+            if(!file.name.endsWith(".txt")){
+                alert("只能选择txt格式文件!");
+                fileInput.value = "";
+                return;
+            }
+
+            // 文件读取器
+            const reader = new FileReader();
+            reader.onload = function(event){
+                // 获取txt里面全部文字
+                const txtContent = event.target.result;
+                if(!txtContent.trim()){
+                    alert("txt文件内容为空,无法导入!");
+                    return;
+                }
+
+                // 使用文件名作为备忘录标题，去掉后缀 .txt
+                let title = file.name.replace(".txt","");
+
+                // 组装备忘录对象，和newtxt.html保存格式完全一致
+                let noteList = JSON.parse(localStorage.getItem("notes")) || [];
+                let newNote = {
+                    id: Date.now(),
+                    title: title,
+                    content: txtContent,
+                    time: new Date().toLocaleString()
+                };
+                noteList.push(newNote);
+                localStorage.setItem("notes", JSON.stringify(noteList));
+
+                alert("导入成功！已存入仓库");
+                // 导入完成跳转到仓库页面查看
+                location.href = "warehouse.html";
+            }
+            // 读取文件为文本
+            reader.readAsText(file);
+        }
+    </script>
+</body>
+</html>
