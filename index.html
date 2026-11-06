@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zn-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -20,12 +20,12 @@
             top: 55%;
             display: flex;
             flex-direction: column;
-            gap: 30px;
+            gap: clamp(16px,4vw,36px);
         }
         .button{
             /* 宽和长 */
-            padding: 30px 50px;
-            font-size: 24px;
+            padding: clamp(14px,3vw,32px) clamp(28px,6vw,55px);
+            font-size: clamp(16px,3vw,26px);
             border: none;
             border-radius: 20px;
             background: linear-gradient(45deg, #b3a4ab, #7790b2);
