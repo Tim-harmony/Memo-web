@@ -25,11 +25,34 @@
             -webkit-background-clip: text;
             background-clip: text;
             text-align:center;
-            font-size:32px;
+            font-size:clamp(24px,3vw,32px);
         }
-        .back-btn{
-            display:block;
+
+        /* 搜索框，放在原来返回按钮的位置 */
+        .search-input{
+            width:100%;
+            padding:14px 18px;
             margin:0 auto 30px;
+            display:block;
+            border:none;
+            border-radius:12px;
+            background:rgba(255,255,255,0.22);
+            backdrop-filter: blur(8px);
+            color:#fff;
+            font-size:clamp(16px,1.8vw,19px);
+            outline:none;
+        }
+        .search-input::placeholder{
+            color:#dddddd;
+            opacity:0.65;
+        }
+
+        /* 返回主页按钮：固定悬浮，底部10%，水平居中 */
+        .back-btn{
+            position:fixed;
+            left:50%;
+            bottom:10%;
+            transform: translateX(-50%);
             padding:12px 24px;
             border:none;
             border-radius:10px;
@@ -38,10 +61,12 @@
             font-size:16px;
             cursor:pointer;
             transition:0.2s;
+            z-index:10;
         }
         .back-btn:hover{
-            transform:scale(1.05);
+            transform: translateX(-50%) scale(1.05);
         }
+
         .note-item{
             background:rgba(255,255,255,0.22);
             backdrop-filter: blur(8px);
@@ -49,7 +74,6 @@
             padding:20px;
             margin-bottom:18px;
         }
-        /*==== 新增标题样式，可点击 ====*/
         .note-title{
             color:#fff;
             font-size:20px;
@@ -64,7 +88,6 @@
             font-size:14px;
             opacity:0.85;
         }
-        /*==== 删掉原来note-preview正文预览，不再展示正文 ====*/
         .btn-group-row{
             display:flex;
             gap:12px;
@@ -101,8 +124,7 @@
             font-size:22px;
             margin-top:80px;
         }
-
-        /*==== 新增弹窗遮罩与弹窗盒子CSS ====*/
+        /*==== 弹窗遮罩与弹窗盒子CSS ====*/
         .mask{
             position:fixed;
             inset:0;
@@ -147,11 +169,15 @@
 <body>
     <div class="wrap">
         <h2>📂 备忘录仓库</h2>
-        <button class="back-btn" onclick="location.href='index.html'">返回主页</button>
+        <!-- 搜索框替换原来返回按钮位置 -->
+        <input class="search-input" id="searchInput" placeholder="输入标题关键词搜索备忘录">
         <div id="noteList"></div>
     </div>
 
-    <!--==== 修改：新增弹窗DOM结构 ====-->
+    <!-- 返回主页按钮移到底部fixed悬浮 -->
+    <button class="back-btn" onclick="location.href='index.html'">返回主页</button>
+
+    <!--弹窗DOM结构 -->
     <div class="mask" id="mask">
         <div class="modal-box">
             <div class="modal-title" id="mTitle"></div>
@@ -162,19 +188,33 @@
     </div>
 
 <script>
-    //==== 增加全局变量保存当前备忘录id ====
     let currentId = null;
+    const searchInput = document.getElementById("searchInput");
+    //监听搜索框输入，实时过滤
+    searchInput.addEventListener("input", renderList);
 
     function renderList() {
         let noteList = JSON.parse(localStorage.getItem("notes")) || [];
+        const keyword = searchInput.value.trim().toLowerCase();
+
+        // 根据标题关键词过滤，不区分大小写
+        let filterList = noteList.filter(note=>{
+            return note.title.toLowerCase().includes(keyword);
+        });
+
         const box = document.getElementById("noteList");
         box.innerHTML = "";
+
         if(noteList.length === 0){
             box.innerHTML = `<div class="empty-tip">仓库空空如也，快去新建备忘录吧</div>`;
             return;
         }
-        noteList.forEach(function(note){
-            /*==== 修改：列表只渲染标题+时间，去掉note-preview正文，点击标题触发弹窗openModal ====*/
+        if(filterList.length === 0){
+            box.innerHTML = `<div class="empty-tip">无匹配的备忘录</div>`;
+            return;
+        }
+
+        filterList.forEach(function(note){
             box.innerHTML += `
             <div class="note-item">
                 <div class="note-title" onclick="openModal(${note.id})">📌 ${note.title}</div>
@@ -188,7 +228,6 @@
         })
     }
 
-    //==== 新增打开弹窗函数，根据id读取备忘录填充弹窗内容 ====
     function openModal(id){
         let noteList = JSON.parse(localStorage.getItem("notes")) || [];
         let note = noteList.find(x=>x.id === id);
@@ -199,7 +238,7 @@
         document.getElementById("mContent").innerText = note.content;
         document.getElementById("mask").style.display = "flex";
     }
-    //==== 新增关闭弹窗函数 ====
+
     function closeModal(){
         document.getElementById("mask").style.display = "none";
     }
@@ -209,7 +248,6 @@
         let noteList = JSON.parse(localStorage.getItem("notes")) || [];
         let targetNote = noteList.find(item=>item.id === id);
         if(!targetNote) return;
-        /*==== 修改：下载文本带上标题，文件名使用备忘录标题 ====*/
         const text = `标题：${targetNote.title}\n备忘录时间:${targetNote.time}\n\n${targetNote.content}`;
         const blob = new Blob([text], {type:"text/plain"});
         const url = URL.createObjectURL(blob);

@@ -32,6 +32,11 @@
             border-radius:16px;
             padding:40px 20px;
             margin-top:30px;
+            border:3px solid transparent;
+            transition: border-color 0.25s;
+        }
+        .upload-wrap.drag-over{
+            border-color: #87cefa;
         }
         input[type="file"]{
             color:#ffffff;
@@ -60,43 +65,70 @@
 <body>
     <div class="container">
         <h2>上传本地TXT备忘录</h2>
-        <div class="upload-wrap">
-            <div class="tip-text">仅支持上传 .txt 文本文件</div>
-            <!-- 文件选择框，只允许选择txt -->
+        <div class="upload-wrap" id="dropBox">
+            <div class="tip-text">仅支持上传 .txt 文本文件<br>可将txt文件拖拽到此区域</div>
             <input type="file" id="fileInput" accept=".txt">
         </div>
         <br>
         <button class="btn-back" onclick="location.href='index.html'">返回主页</button>
     </div>
-
     <script>
         const fileInput = document.getElementById("fileInput");
-        // 选中文件后触发
+        const dropBox = document.getElementById("dropBox");
+
+        // =========关键：全局阻止整个页面拖拽文件浏览器打开的行为=========
+        ["dragenter","dragover","dragleave","drop"].forEach(eventName=>{
+            document.body.addEventListener(eventName, e=>{
+                e.preventDefault();
+                e.stopPropagation();
+            })
+        });
+
         fileInput.onchange = function(e){
             const file = e.target.files[0];
             if(!file) return;
+            handleFile(file);
+        }
 
-            // 判断后缀，不是txt直接提示
+        dropBox.addEventListener("dragenter",()=>{
+            dropBox.classList.add("drag-over");
+        });
+        dropBox.addEventListener("dragover",()=>{
+            dropBox.classList.add("drag-over");
+        });
+        dropBox.addEventListener("dragleave",(e)=>{
+            // 判断是否真的离开盒子，避免子元素闪烁
+            if(!dropBox.contains(e.relatedTarget)){
+                dropBox.classList.remove("drag-over");
+            }
+        });
+
+        dropBox.addEventListener("drop",(e)=>{
+            // drop事件第一时间阻止默认！防止浏览器打开文件
+            e.preventDefault();
+            e.stopPropagation();
+            dropBox.classList.remove("drag-over");
+            const file = e.dataTransfer.files[0];
+            if(!file) return;
+            handleFile(file);
+        });
+
+
+        function handleFile(file){
             if(!file.name.endsWith(".txt")){
                 alert("只能选择txt格式文件!");
                 fileInput.value = "";
                 return;
             }
-
-            // 文件读取器
             const reader = new FileReader();
             reader.onload = function(event){
-                // 获取txt里面全部文字
                 const txtContent = event.target.result;
                 if(!txtContent.trim()){
                     alert("txt文件内容为空,无法导入!");
+                    fileInput.value = "";
                     return;
                 }
-
-                // 使用文件名作为备忘录标题，去掉后缀 .txt
                 let title = file.name.replace(".txt","");
-
-                // 组装备忘录对象，和newtxt.html保存格式完全一致
                 let noteList = JSON.parse(localStorage.getItem("notes")) || [];
                 let newNote = {
                     id: Date.now(),
@@ -107,11 +139,10 @@
                 noteList.push(newNote);
                 localStorage.setItem("notes", JSON.stringify(noteList));
 
-                alert("导入成功！已存入仓库");
-                // 导入完成跳转到仓库页面查看
-                location.href = "warehouse.html";
+                alert("✅导入成功！已存入仓库");
+                fileInput.value = "";
+                // 【没有跳转！停留在上传页面】
             }
-            // 读取文件为文本
             reader.readAsText(file);
         }
     </script>

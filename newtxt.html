@@ -68,39 +68,108 @@
             opacity: 0.8;
             font-size: inherit;
             line-height: inherit;
+        }.btn-wrap{
+            display:flex;
+            gap: 2vw;
+            justify-content:center;
+            margin-top:3vw;
         }
         .btn-save, .btn-back {
-            margin-top: 20px;
-            padding: 14px 30px;
-            font-size: 18px;
+            padding: clamp(10px,2vw,16px) clamp(22px,4vw,36px);
+            font-size: clamp(16px,2vw,22px);
             border: none;
             border-radius: 10px;
             background: linear-gradient(45deg, #9999aa, #7788aa);
             color: white;
             cursor: pointer;
             transition: 0.2s;
-            margin: 10px;
         }
         .btn-save:hover,.btn-back:hover{
             transform: scale(1.05);
         }
+        /* 自动保存提示：右上角漂浮提示 */
+        .save-tip{
+            position: fixed;
+            top:20px;
+            right:20px;
+            padding:8px 14px;
+            background:rgba(0,0,0,0.55);
+            color:#89ff89;
+            border-radius:8px;
+            opacity:0;
+            transition:opacity 0.3s;
+            pointer-events:none;
+        }
+        .save-tip.show{
+            opacity:1;
+        }
     </style>
 </head>
 <body>
+    <!-- 自动保存提示浮层 -->
+    <div class="save-tip" id="saveTip">✅已保存</div>
+
     <div class="container">
         <h2>新建备忘录</h2>
         <!-- 标题框 -->
         <input type="text" id="noteTitle" class="title-input" placeholder="请输入备忘录标题">
         <!-- 正文框 -->
         <div id="noteInput" class="editable-box" contenteditable="true" data-placeholder="在这里输入你的备忘录内容..."></div>
-        <br>
-        <button class="btn-save" onclick="saveNote()">保存备忘录</button>
-        <button class="btn-back" onclick="goBack()">返回主页</button>
+
+        <div class="btn-wrap">
+            <button class="btn-save" onclick="saveNote()">保存备忘录</button>
+            <button class="btn-back" onclick="goBack()">返回主页</button>
+        </div>
     </div>
+
     <script>
+        let autoSaveTimer = null;
+        const SAVE_DELAY = 500; // 停止输入500ms自动保存草稿
+
+        const titleEl = document.getElementById("noteTitle");
+        const contentEl = document.getElementById("noteInput");
+        const tipEl = document.getElementById("saveTip");
+
+        // 页面加载：读取草稿回填
+        window.onload = function(){
+            const draftStr = localStorage.getItem("note_draft");
+            if(draftStr){
+                const draft = JSON.parse(draftStr);
+                titleEl.value = draft.title || "";
+                contentEl.innerText = draft.content || "";
+            }
+            // 监听输入事件，触发防抖自动保存
+            titleEl.addEventListener("input", triggerAutoSave);
+            contentEl.addEventListener("input", triggerAutoSave);
+        }
+
+        // 防抖：每次输入就重置计时器
+        function triggerAutoSave(){
+            clearTimeout(autoSaveTimer);
+            autoSaveTimer = setTimeout(autoSaveDraft, SAVE_DELAY);
+        }
+
+        // 自动保存草稿到localStorage
+        function autoSaveDraft(){
+            const title = titleEl.value.trim();
+            const content = contentEl.innerText;
+            const draft = { title, content };
+            localStorage.setItem("note_draft", JSON.stringify(draft));
+            showSaveTip();
+        }
+
+        // 显示短暂的“已保存”提示
+        function showSaveTip(){
+            tipEl.classList.add("show");
+            setTimeout(()=>{
+                tipEl.classList.remove("show");
+            },1200);
+        }
+
+        // =====正式保存备忘录（存入notes列表，保存成功清空草稿）=====
         function saveNote(){
-            let title = document.getElementById("noteTitle").value.trim();
-            let content = document.getElementById("noteInput").innerText;
+            let title = titleEl.value.trim();
+            let content = contentEl.innerText;
             if(!title){
                 alert("请填写标题！");
                 return;
@@ -112,15 +181,20 @@
             let noteList = JSON.parse(localStorage.getItem("notes")) || [];
             let newNote = {
                 id: Date.now(),
-                title: title,    
+                title: title,
                 content: content,
                 time: new Date().toLocaleString()
             }
             noteList.push(newNote);
             localStorage.setItem("notes", JSON.stringify(noteList));
+
+            // 正式提交成功，清空草稿
+            localStorage.removeItem("note_draft");
+
             alert("保存成功！");
             location.href = "index.html";
         }
+
         function goBack(){
             location.href = "index.html";
         }
