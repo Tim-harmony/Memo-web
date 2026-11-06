@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zn-CN">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,12 +7,19 @@
     <style>
         /* 全局效果 */
         body {
-            background-image: url("冰公主2.jpg");
-            background-repeat: no-repeat;
-            background-size: cover;
-            background-position: center;
             margin: 0;
             min-height: 100vh;
+            background: url("冰公主2.jpg") center/cover no-repeat;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+        }
+        /* 舞台容器：绝对定位参照物，原图2500×1600，比例25/16 */
+        .stage{
+            position:relative;
+            width:100%;
+            max-width:1200px;
+            aspect-ratio: 25 / 16;
         }
         .button-group{
             position:absolute;
@@ -22,8 +29,11 @@
             flex-direction: column;
             gap: clamp(16px,4vw,36px);
         }
+        /* 样式直接写在a标签上，不再用button */
         .button{
-            /* 宽和长 */
+            display:block;
+            text-align:center;
+            text-decoration:none;
             padding: clamp(14px,3vw,32px) clamp(28px,6vw,55px);
             font-size: clamp(16px,3vw,26px);
             border: none;
@@ -40,17 +50,12 @@
     </style>
 </head>
 <body>
-    <div class="button-group">
-        <!-- a标签：点击跳转到 new.html -->
-        <a href="upload.html" style="text-decoration:none;">
-            <button class="button">上传文件</button>
-        </a>
-        <a href="newtxt.html" style="text-decoration:none;">
-            <button class="button">新建备忘录</button>
-        </a>
-        <a href="warehouse.html" style="text-decoration:none;">
-            <button class="button">查看已有仓库</button>
-        </a>
+    <div class="stage">
+        <div class="button-group">
+            <a class="button" href="upload.html">上传文件</a>
+            <a class="button" href="newtxt.html">新建备忘录</a>
+            <a class="button" href="warehouse.html">查看已有仓库</a>
+        </div>
     </div>
 </body>
 </html>
